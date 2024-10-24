@@ -58,6 +58,17 @@ namespace PortaCapena.OdooJsonRpcClient.Converters
                     result = ConvertToDotNetEnum(dotnetType, value.ToString());
                     return true;
 
+                // special case, for deserialization, when we have an object that is mapped to a string property, just map the RAW value as a string
+                case JTokenType.Object when dotnetType == typeof(string):
+                    result = value.ToObject(typeof(string));
+                    return true;
+
+                // Add special case for Objects that does not have a specific type, and should be mapped to a Dictionary<,>
+                case JTokenType.Object when dotnetType.IsGenericType && dotnetType.GetGenericTypeDefinition() == typeof(Dictionary<,>) &&
+                                            dotnetType.GenericTypeArguments.Length == 2:
+                    result = value.ToObject(dotnetType);
+                    return true;
+
                 case JTokenType.String when dotnetType.IsGenericType && dotnetType.GetGenericTypeDefinition() == typeof(Nullable<>) &&
                                             dotnetType.GenericTypeArguments.Length == 1 && dotnetType.GenericTypeArguments[0].IsEnum:
                 case JTokenType.Integer when dotnetType.IsGenericType && dotnetType.GetGenericTypeDefinition() == typeof(Nullable<>) &&
